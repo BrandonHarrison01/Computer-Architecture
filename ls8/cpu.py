@@ -5,6 +5,7 @@ import sys
 LDI = 0b10000010
 PRN = 0b01000111
 HLT = 0b00000001
+MUL = 0b10100010
 
 class CPU:
     """Main CPU class."""
@@ -17,8 +18,6 @@ class CPU:
 
     def load(self):
         """Load a program into memory."""
-
-        address = 0
 
         # For now, we've just hardcoded a program:
 
@@ -37,18 +36,27 @@ class CPU:
 
         with open(filename) as f:
             for line in f:
-                line = line.split('#')
-                val = int(line[0], 2)
+                n = line.split('#')
+                n[0] = n[0].strip()
+
+                if n[0] == '':
+                    continue
+
+                val = int(n[0], 2)
                 program[address] = val
                 # print(program, val)
                 address += 1
 
         print(program[:20])
-        sys.exit()
+        # sys.exit()
+
+        index = 0
 
         for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+            self.ram[index] = instruction
+            index += 1
+
+        # print('test 2')
 
 
     def alu(self, op, reg_a, reg_b):
@@ -82,6 +90,7 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
+        # print(self.ram, 'test')
         halted = False
         while not halted:
             instruction = self.ram[self.__pc]
@@ -99,6 +108,10 @@ class CPU:
                 register_num = self.reg[index]
                 print(register_num)
                 self.__pc += 2
+
+            elif instruction == MUL:
+                print(self.ram[self.__pc + 1] * self.ram[self.__pc + 2])
+                self.__pc += 3
 
             else:
                 print(f'problem at {self.__pc}')
