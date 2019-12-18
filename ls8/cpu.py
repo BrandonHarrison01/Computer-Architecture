@@ -2,12 +2,18 @@
 
 import sys
 
+LDI = 0b10000010
+PRN = 0b01000111
+HLT = 0b00000001
+
 class CPU:
     """Main CPU class."""
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.ram = {}
+        self.reg = [0] * 8
+        self.__pc = 0
 
     def load(self):
         """Load a program into memory."""
@@ -62,4 +68,23 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        halted = False
+        while not halted:
+            instruction = self.ram[self.__pc]
+
+            if instruction == HLT:
+                halted = True
+
+            elif instruction == LDI:
+                register_num = self.ram[self.__pc + 1]
+                self.reg[register_num] = self.ram[self.__pc + 2]
+                self.__pc += 3
+            
+            elif instruction == PRN:
+                index = self.ram[self.__pc + 1]
+                register_num = self.reg[index]
+                print(register_num)
+                self.__pc += 2
+
+            else:
+                print(f'problem at {self.__pc}')
