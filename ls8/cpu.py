@@ -15,22 +15,21 @@ class CPU:
         self.ram = {}
         self.reg = [0] * 8
         self.__pc = 0
+        self.branchtable = {
+            LDI: self.ldi,
+            PRN: self.prn,
+            HLT: self.hlt,
+            MUL: self.mul
+        }
+        self.halted = False
+
+
 
     def load(self):
         """Load a program into memory."""
 
-        # For now, we've just hardcoded a program:
-
         program = [0] * 256
-            # # From print8.ls8
-            # 0b10000010, # LDI R0,8
-            # 0b00000000,
-            # 0b00001000,
-            # 0b01000111, # PRN R0
-            # 0b00000000,
-            # 0b00000001, # HLT
         
-
         filename = sys.argv[1]
         address = 0
 
@@ -65,8 +64,11 @@ class CPU:
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         #elif op == "SUB": etc
+        elif op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b] 
         else:
             raise Exception("Unsupported ALU operation")
+
 
     def trace(self):
         """
@@ -88,30 +90,34 @@ class CPU:
 
         print()
 
+
+    def ldi(self):
+        register_num = self.ram[self.__pc + 1]
+        self.reg[register_num] = self.ram[self.__pc + 2]
+        self.__pc += 3
+
+
+    def prn(self):
+        index = self.ram[self.__pc + 1]
+        register_num = self.reg[index]
+        print(register_num)
+        self.__pc += 2
+
+
+    def mul(self):
+        self.alu('MUL', 0, 1)
+        self.__pc += 3
+        
+
+    def hlt(self):
+        self.halted = True
+
+
     def run(self):
         """Run the CPU."""
-        # print(self.ram, 'test')
-        halted = False
-        while not halted:
+
+        while not self.halted:
             instruction = self.ram[self.__pc]
 
-            if instruction == HLT:
-                halted = True
+            self.branchtable[instruction]()
 
-            elif instruction == LDI:
-                register_num = self.ram[self.__pc + 1]
-                self.reg[register_num] = self.ram[self.__pc + 2]
-                self.__pc += 3
-            
-            elif instruction == PRN:
-                index = self.ram[self.__pc + 1]
-                register_num = self.reg[index]
-                print(register_num)
-                self.__pc += 2
-
-            elif instruction == MUL:
-                print(self.ram[self.__pc + 1] * self.ram[self.__pc + 2])
-                self.__pc += 3
-
-            else:
-                print(f'problem at {self.__pc}')
