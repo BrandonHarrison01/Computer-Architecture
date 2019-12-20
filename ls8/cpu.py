@@ -11,6 +11,10 @@ PUSH = 0b01000101
 POP = 0b01000110
 CALL = 0b01010000
 RET = 0b00010001
+CMP = 0b10100111
+JMP = 0b01010100
+JEQ = 0b01010101
+JNE = 0b01010110
 
 class CPU:
     """Main CPU class."""
@@ -29,11 +33,16 @@ class CPU:
             PUSH: self.push,
             POP: self.pop,
             CALL: self.call,
-            RET: self.ret
+            RET: self.ret,
+            CMP: self.cmp,
+            JMP: self.jmp,
+            JEQ: self.jeq,
+            JNE: self.jne
         }
         self.halted = False
         self.stack_pointer = 7
         self.reg[self.stack_pointer] = 0b11110100
+        self.E = 0
 
 
 
@@ -65,6 +74,11 @@ class CPU:
         #elif op == "SUB": etc
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b] 
+        elif op == "CMP":
+            if self.reg[reg_a] == self.reg[reg_b]:
+                self.E = 1
+            else:
+                self.E = 0
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -157,6 +171,29 @@ class CPU:
         self.reg[self.stack_pointer] += 1  # <-- incrementing value stored in reg[7]
         self.__pc = pop_val  # <-- moving program counter to ret_add
         # print(self.__pc)
+
+
+    def cmp(self):
+        self.alu("CMP", self.ram[self.__pc + 1], self.ram[self.__pc + 2])
+
+        self.__pc += 3
+
+    def jmp(self):
+        self.__pc = self.reg[self.ram[self.__pc + 1]]
+
+    
+    def jeq(self):
+        if self.E:
+            self.__pc = self.reg[self.ram[self.__pc + 1]]
+        else:
+            self.__pc += 2
+
+    
+    def jne(self):
+        if not self.E:
+            self.__pc = self.reg[self.ram[self.__pc + 1]]
+        else:
+            self.__pc += 2
 
 
     def run(self):
