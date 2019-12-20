@@ -42,7 +42,7 @@ class CPU:
         self.halted = False
         self.stack_pointer = 7
         self.reg[self.stack_pointer] = 0b11110100
-        self.E = 0
+        self.FL = 0b00000000
 
 
 
@@ -76,9 +76,9 @@ class CPU:
             self.reg[reg_a] *= self.reg[reg_b] 
         elif op == "CMP":
             if self.reg[reg_a] == self.reg[reg_b]:
-                self.E = 1
+                self.FL = 0b00000001
             else:
-                self.E = 0
+                self.FL = 0b00000000
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -183,14 +183,14 @@ class CPU:
 
     
     def jeq(self):
-        if self.E:
+        if self.FL == 1:
             self.__pc = self.reg[self.ram[self.__pc + 1]]
         else:
             self.__pc += 2
 
     
     def jne(self):
-        if not self.E:
+        if self.FL < 1:
             self.__pc = self.reg[self.ram[self.__pc + 1]]
         else:
             self.__pc += 2
