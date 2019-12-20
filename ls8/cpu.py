@@ -6,6 +6,11 @@ LDI = 0b10000010
 PRN = 0b01000111
 HLT = 0b00000001
 MUL = 0b10100010
+ADD = 0b10100000
+PUSH = 0b01000101
+POP = 0b01000110
+CALL = 0b01010000
+RET = 0b00010001
 
 class CPU:
     """Main CPU class."""
@@ -19,16 +24,21 @@ class CPU:
             LDI: self.ldi,
             PRN: self.prn,
             HLT: self.hlt,
-            MUL: self.mul
+            MUL: self.mul,
+            ADD: self.add,
+            PUSH: self.push,
+            POP: self.pop,
+            CALL: self.call,
+            RET: self.ret
         }
         self.halted = False
+        self.stack_pointer = 7
+        self.reg[self.stack_pointer] = 0b11110100
 
 
 
     def load(self):
         """Load a program into memory."""
-
-        program = [0] * 256
         
         filename = sys.argv[1]
         address = 0
@@ -42,20 +52,9 @@ class CPU:
                     continue
 
                 val = int(n[0], 2)
-                program[address] = val
+                self.ram[address] = val
                 # print(program, val)
                 address += 1
-
-        print(program[:20])
-        # sys.exit()
-
-        index = 0
-
-        for instruction in program:
-            self.ram[index] = instruction
-            index += 1
-
-        # print('test 2')
 
 
     def alu(self, op, reg_a, reg_b):
@@ -105,12 +104,59 @@ class CPU:
 
 
     def mul(self):
-        self.alu('MUL', 0, 1)
-        self.__pc += 3
+        op1 = self.ram[self.__pc + 1]
+        op2 = self.ram[self.__pc + 2]
+        self.alu('MUL', op1, op2)
         
+        self.__pc += 3
+
+
+    def add(self):
+        op1 = self.ram[self.__pc + 1]
+        op2 = self.ram[self.__pc + 2]
+        self.alu('ADD', op1, op2)
+        
+        self.__pc += 3
+
 
     def hlt(self):
         self.halted = True
+
+
+    def push(self):
+        print(self.reg[self.stack_pointer], 'pre dec')
+        self.reg[self.stack_pointer] -= 1 # <-- decrementing value stored in register 7
+        print(self.reg[self.stack_pointer], 'post dec')
+
+        register_num = self.ram[self.__pc + 1] # <-- getting register number from next instruction
+        value = self.reg[register_num]  # <-- setting a variable called value to the value found in register with given register number
+        self.ram[self.reg[self.stack_pointer]] = value # <-- ?? putting value in the stack at the value being stored in reg[7]
+
+        self.__pc += 2
+
+
+    def pop(self):
+        register_num = self.ram[self.__pc + 1]
+        value = self.ram[self.reg[self.stack_pointer]]
+        self.reg[register_num] = value
+
+        self.reg[self.stack_pointer] += 1
+        self.__pc += 2
+
+
+    def call(self):
+        push_val = self.__pc + 2  # <-- setting value push_val to next instruction
+        self.reg[self.stack_pointer] -= 1  # <-- decrementing value in reg[7]
+        self.ram[self.reg[self.stack_pointer]] = push_val  # <-- setting value of ram at reg[7]'s value to the next instrucion
+        # print(self.__pc, 'call')
+        self.__pc = self.reg[self.ram[self.__pc + 1]]  # <-- moving program counter to value stored in given register
+
+
+    def ret(self):
+        pop_val = self.ram[self.reg[self.stack_pointer]]  # <-- setting variable ret_add to value found at ram index stored in reg[7]
+        self.reg[self.stack_pointer] += 1  # <-- incrementing value stored in reg[7]
+        self.__pc = pop_val  # <-- moving program counter to ret_add
+        # print(self.__pc)
 
 
     def run(self):
